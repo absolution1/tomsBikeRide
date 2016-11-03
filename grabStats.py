@@ -21,6 +21,8 @@ SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Google Sheets API Python Quickstart'
 
+BIKES = {0:'New',1:'Old',2:'Katie mountain'}
+
 spreadsheetId = '1zfJTTZJsjKOBelItdlcavzVYIfrRArD-GHXPlqbiXVM'
 
 
@@ -54,6 +56,7 @@ def get_credentials():
 
 def input_value(value, label, position, service, mode = 0):
     if not value:
+        svalue = None
         if mode == 0:
             rvalue = float(raw_input(label))
         elif mode == 1:
@@ -61,7 +64,11 @@ def input_value(value, label, position, service, mode = 0):
         elif mode == 2:
             tmp = raw_input(label)
             rvalue = tmp if tmp else 'Europe/London'
-        body = {'values': [[rvalue]]}
+        elif mode == 3:
+            tmp = raw_input(label)
+            rvalue = int(tmp) if tmp else 0
+            svalue = BIKES[rvalue]
+        body = {'values': [[svalue if svalue else rvalue]]}
         result = service.spreadsheets().values().update(spreadsheetId=spreadsheetId, range=position,
                                                         valueInputOption="USER_ENTERED", body=body).execute()
         return rvalue
@@ -70,6 +77,10 @@ def input_value(value, label, position, service, mode = 0):
             return float(value)
         elif mode in [1, 2]:
             return str(value)
+        elif mode == 3:
+            for key,value in BIKES.iteritems():
+                if str(value) == value:
+                    return key
 
 def icol_to_acol(icol):
     return chr(icol + ord('A'))
@@ -88,7 +99,7 @@ def main():
     service = discovery.build('sheets', 'v4', http=http,
                               discoveryServiceUrl=discoveryUrl)
 
-    rangeName = 'Sheet1!A2:J'
+    rangeName = 'Sheet1!A2:L'
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])
@@ -96,15 +107,14 @@ def main():
     if not values:
         print('No data found.')
     else:
-        print('Start time, Distance, Speed, Elevation, Commute:')
+        print('Start time, Distance, Speed, Elevation, Commute, bike:')
         f = open('toms_bike_ride.txt', 'w')
         utc = pytz.utc
         london = pytz.timezone('Europe/London')
         for irow, row in enumerate(values):
-            # Print columns A, C, H, I, J, which correspond to indices 0, 2, ...
             date = datetime.strptime(row[0], '%B %d, %Y at %I:%M%p')
             distance = float(row[2]) / 1609.3439 # metres to miles
-            while(len(row)) < 11:
+            while(len(row)) < 12:
                 row.append(None)
             speed = input_value(row[7], str(date) + ' Speed (mph): ', 'Sheet1!' + icol_to_acol(7) + str(irow + 2), service)
             elevation = input_value(row[8], str(date) + ' Elevation gain (ft): ', 'Sheet1!' + icol_to_acol(8) + str(irow + 2), service)
@@ -112,8 +122,10 @@ def main():
             timezone = input_value(row[10], str(date) + ' Timezone (default: Europe/London): ', 'Sheet1!' + icol_to_acol(10) + str(irow + 2), service, 2)
             local_date = pytz.timezone(timezone).localize(date)
             utc_date = local_date.astimezone(utc)
-            print("%s, %.1f miles, %.1f mph, %.1f ft%s" % (utc_date, distance, speed, elevation, ', commute' if commute == 'yes' else ''))
-            f.write('%s %.1f %.1f %d %s\n' % (utc_date.strftime('%s'), distance, speed, elevation, '1' if commute == 'yes' else '0'))
+            bikeid = input_value(row[11], str(date) + ' Bike ID ' + (' '.join(str(x) + ':' + y for x, y in BIKES.iteritems())) + ' (default: 0:' + BIKES[0] + ')', 'Sheet1!' + icol_to_acol(11) + str(irow + 2), service, 3)
+            
+            print("%s, %.1f miles, %.1f mph, %.1f ft%s, %s" % (utc_date, distance, speed, elevation, ', commute' if commute == 'yes' else '', BIKES[bikeid]))
+            f.write('%s %.1f %.1f %d %d %d\n' % (utc_date.strftime('%s'), distance, speed, elevation, 1 if commute == 'yes' else 0, bikeid))
         f.close()
 
 if __name__ == '__main__':
