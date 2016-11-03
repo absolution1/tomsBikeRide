@@ -78,8 +78,8 @@ def input_value(value, label, position, service, mode = 0):
         elif mode in [1, 2]:
             return str(value)
         elif mode == 3:
-            for key,value in BIKES.iteritems():
-                if str(value) == value:
+            for key,val in BIKES.iteritems():
+                if str(value) == val:
                     return key
 
 def icol_to_acol(icol):
