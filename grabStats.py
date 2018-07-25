@@ -21,7 +21,7 @@ SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Google Sheets API Python Quickstart'
 
-BIKES = {0:'New',1:'Old',2:'Katie mountain',3:'Centre Parcs tandem'}
+BIKES = {0:'Red trek',1:'Old',2:'Katie mountain',3:'Centre Parcs tandem',4:'Black trek',5:'J-PARC'}
 
 spreadsheetId = '1zfJTTZJsjKOBelItdlcavzVYIfrRArD-GHXPlqbiXVM'
 
@@ -66,7 +66,7 @@ def input_value(value, label, position, service, mode = 0):
             rvalue = tmp if tmp else 'Europe/London'
         elif mode == 3:
             tmp = raw_input(label)
-            rvalue = int(tmp) if tmp else 0
+            rvalue = int(tmp) if tmp else 4
             svalue = BIKES[rvalue]
         body = {'values': [[svalue if svalue else rvalue]]}
         result = service.spreadsheets().values().update(spreadsheetId=spreadsheetId, range=position,
@@ -122,8 +122,9 @@ def main():
             timezone = input_value(row[10], str(date) + ' Timezone (default: Europe/London): ', 'Sheet1!' + icol_to_acol(10) + str(irow + 2), service, 2)
             local_date = pytz.timezone(timezone).localize(date)
             utc_date = local_date.astimezone(utc)
-            bikeid = input_value(row[11], str(date) + ' Bike ID ' + (' '.join(str(x) + ':' + y for x, y in BIKES.iteritems())) + ' (default: 0:' + BIKES[0] + '): ', 'Sheet1!' + icol_to_acol(11) + str(irow + 2), service, 3)
-            
+            bikeid = input_value(row[11], str(date) + ' Bike ID ' + (' '.join(str(x) + ':' + y for x, y in BIKES.iteritems())) + ' (default: 4:' + BIKES[4] + '): ', 'Sheet1!' + icol_to_acol(11) + str(irow + 2), service, 3)
+
+            print(utc_date, bikeid)
             print("%s, %.1f miles, %.1f mph, %.1f ft%s, %s" % (utc_date, distance, speed, elevation, ', commute' if commute == 'yes' else '', BIKES[bikeid]))
             f.write('%s %.1f %.1f %d %d %d\n' % (utc_date.strftime('%s'), distance, speed, elevation, 1 if commute == 'yes' else 0, bikeid))
         f.close()

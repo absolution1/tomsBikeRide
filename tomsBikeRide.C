@@ -3,6 +3,9 @@ void plot_time_hist(TTree * tree, const char * vars, const char * cuts, const ch
   int n = tree->Draw(vars,cuts,"goff");
   TGraph *g = new TGraph(n, tree->GetV2(), tree->GetV1());
   g->SetMarkerStyle(20);
+  //TDatime da(1970,01,01,00,00,00);
+  //gStyle->SetTimeOffset(da.Convert());
+  g->GetXaxis()->SetTimeFormat("%d/%m/%Y%F1970-01-01 00:00:00");
   g->GetXaxis()->SetTimeDisplay(1);
   g->GetXaxis()->SetTitle("Date (UTC)");
   g->GetYaxis()->SetTitle(yaxis);
@@ -28,7 +31,12 @@ void plot_text(double x, double y, const char * text)
 
 void tomsBikeRide()
 {
-  const double price = 900.00; // Cost of bike in pounds.
+  double pricetemp = 900.00;  // Cost of bike in pounds.
+  pricetemp += 300; // cost of accessories, clothes, etc. (estimate)
+  pricetemp -= 250; // saving from cycleschme (estimate)
+  pricetemp += 80; // price to buy from the cyclescheme people (estimate)
+  pricetemp += 250; // price of insurance excess
+  const double price = pricetemp;
   
   TString dir = gSystem->UnixPathName(__FILE__);
   dir.ReplaceAll("tomsBikeRide.C","");
@@ -58,7 +66,7 @@ void tomsBikeRide()
   double totalhours = 0;
   
   while (infile >> date >> miles >> speed >> elevation >> commute >> bikeId){
-    if(bikeId == 0) {
+    if(bikeId == 0 || bikeId == 4) {
       totalmiles+=miles;
       totalhours+=miles/speed;
       poundspermile=price/totalmiles;
@@ -81,19 +89,20 @@ void tomsBikeRide()
   //plot the pounds per mile
   TCanvas * c = new TCanvas("c","c",700,1200);
   c->Divide(1,3);
+  c->SetGrid();
 
   c->cd(1);
-  plot_time_hist(tree, "poundspermile:date", "bikeId==0", "Cost (in GBP) for total accrued mileage");
+  plot_time_hist(tree, "poundspermile:date", "bikeId==0||bikeId==4", "Cost (in GBP) for total accrued mileage");
   plot_text(.3,.5, Form("Total: %.1f miles", totalmiles));
   plot_text(.7,.5, TString::Format("£%.2f per mile", poundspermile).Data());
 
   c->cd(2);
-  plot_time_hist(tree, "poundsperhour:date", "bikeId==0", "Cost (in GBP) for total accrued time");
+  plot_time_hist(tree, "poundsperhour:date", "bikeId==0||bikeId==4", "Cost (in GBP) for total accrued time");
   plot_text(.3,.5, Form("Total fun: %.1f miles", totalmiles - totalmiles_commute));
   plot_text(.7,.5, Form("Total time: %.1f hours", totalhours));
 
   c->cd(3);
-  plot_time_hist(tree, "commutefraction:date", "bikeId==0", "Commute fraction");
+  plot_time_hist(tree, "commutefraction:date", "bikeId==0||bikeId==4", "Commute fraction");
   plot_text(.3,.5, Form("Total commute: %.1f miles", totalmiles_commute));
   plot_text(.7,.5, Form("Commute fraction: %.2f", commutefraction));
 
