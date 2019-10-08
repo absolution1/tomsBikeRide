@@ -8,7 +8,8 @@ name = "pypi"
 [packages]
 "httplib2" = "*"
 pytz = "*"
-apiclient = "*"
+google-api-python-client = "*"
+oauth2client = "*"
 
 [requires]
 python_version = "2.7"
